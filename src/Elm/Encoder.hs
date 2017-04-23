@@ -127,7 +127,7 @@ instance HasEncoder ElmValue where
   render _ = return "unknown"
 
 instance HasEncoderRef ElmPrimitive where
-  renderRef EDate = pure $ parens "Json.Encode.string << toString"
+  renderRef EDate = pure $ parens "Json.Encode.string << Date.Extra.toUtcIsoString"
   renderRef EUnit = pure "Json.Encode.null"
   renderRef EInt = pure "Json.Encode.int"
   renderRef EChar = pure "Json.Encode.char"
