@@ -112,6 +112,7 @@ instance HasDecoder ElmValue where
     fieldModifier <- asks fieldLabelModifier
     dv <- render value
     return $ "|> required" <+> dquotes (stext (fieldModifier name)) <+> dv
+  render _ = return "unknown"
 
 instance HasDecoderRef ElmPrimitive where
   renderRef (EList (ElmPrimitive EChar)) = pure "string"
