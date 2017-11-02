@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TypeOperators #-}
 
@@ -37,56 +38,85 @@ instance HasDecoderRef ElmDatatype where
   renderRef (ElmPrimitive primitive) = renderRef primitive
 
 instance HasDecoder ElmConstructor where
-  render (NamedConstructor name value) = do
-    dv <- render value
-    return $ "decode" <+> stext name <$$> indent 4 dv
-  render (RecordConstructor name value) = do
-    dv <- render value
-    return $ "decode" <+> stext name <$$> indent 4 dv
+  render = \case
+    NamedConstructor name val ->
+      case val of
+        ElmEmpty -> pure ("decode" <+> stext name)
+        ElmRef ref ->
+          pure ("decode" <+> stext name <+> "|> custom decode" <> stext ref)
+        ElmPrimitiveRef ref -> do
+          refDoc <- renderRef ref
+          pure ("decode" <+> stext name <+> "|> custom" <+> refDoc)
+        v@(Values _ _) -> do
+          (_, v') <- renderConstructorArgs 0 v
+          pure ("decode" <+> stext name <$$> indent 4 v')
+        ElmField _ _ -> error "ElmField inside NamedConstructor"
+    RecordConstructor name val ->
+      case val of
+        ElmEmpty -> error "ElmEmpty in RecordConstructor"
+        ElmRef _ -> error "ElmRef in RecordConstructor"
+        ElmPrimitiveRef _ -> error "ElmRef in RecordConstructor"
+        v@(Values _ _) -> do
+          v' <- renderConstructorFields v
+          pure ("decode" <+> stext name <$$> indent 4 v')
+        ElmField field fieldVal -> do
+          v <- renderField field fieldVal
+          pure ("decode" <+> stext name <$$> indent 4 v)
+    mc@(MultipleConstructors cstrs) -> do
+      cstrs' <- mapM renderConstructorMatch cstrs
+      pure $
+        (if isEnumeration mc then "string" else "field \"tag\" string")
+        <$$>
+        indent 4
+          ("|> andThen" <$$>
+            indent 4 (newlineparens ("\\x ->" <$$>
+              (indent 4 $ "case x of" <$$>
+                (indent 4 $
+                  vsep cstrs' <$$>
+                  "_ -> fail \"Constructor not matched\"")))))
 
-  render mc@(MultipleConstructors constrs) = do
-      cstrs <- mapM renderSum constrs
-      pure $ constructorName <$$> indent 4
-        ("|> andThen" <$$>
-          indent 4 (newlineparens ("\\x ->" <$$>
-            (indent 4 $ "case x of" <$$>
-              (indent 4 $ foldl1 (<$+$>) cstrs <$+$>
-               "_ ->" <$$> indent 4 "fail \"Constructor not matched\""
-              )
-            )
-          ))
-        )
-    where
-      constructorName :: Doc
-      constructorName =
-        if isEnumeration mc then "string" else "field \"tag\" string"
+renderConstructorMatch :: ElmConstructor -> RenderM Doc
+renderConstructorMatch = \case
+  cstr@(NamedConstructor name _) -> do
+    val' <- render cstr
+    pure $
+      dquotes (stext name) <+> "->" <$$> indent 4 ("field \"contents\"" <$$>
+        indent 4 (parens val'))
+  cstr@(RecordConstructor name _) -> do
+    val' <- render cstr
+    pure $
+      dquotes (stext name) <+> "->" <$$> indent 4 ("field \"contents\"" <$$>
+        indent 4 (parens val'))
+  _ -> error "recordConstructorMatch: MultipleConstructors"
 
--- | required "contents"
-requiredContents :: Doc
-requiredContents = "required" <+> dquotes "contents"
 
--- | "<name>" -> decode <name>
-renderSumCondition :: T.Text -> Doc -> RenderM Doc
-renderSumCondition name contents =
-  pure $ dquotes (stext name) <+> "->" <$$>
-    indent 4
-      ("decode" <+> stext name <$$> indent 4 contents)
+renderConstructorFields :: ElmValue -> RenderM Doc
+renderConstructorFields val =
+  case val of
+    Values x y -> do
+      dx <- renderConstructorFields x
+      dy <- renderConstructorFields y
+      pure (dx <$$> dy)
+    ElmField field fieldVal -> renderField field fieldVal
+    ElmRef _ -> error "ElmRef inside RecordConstructor's Values"
+    ElmEmpty -> error "ElmEmpty inside RecordConstructor's Values"
+    ElmPrimitiveRef _ -> error "ElmPrimitiveRef inside RecordConstructor's Values"
 
--- | Render a sum type constructor in context of a data type with multiple
--- constructors.
-renderSum :: ElmConstructor -> RenderM Doc
-renderSum (NamedConstructor name ElmEmpty) = renderSumCondition name mempty
-renderSum (NamedConstructor name v@(Values _ _)) = do
-  (_, val) <- renderConstructorArgs 0 v
-  renderSumCondition name val
-renderSum (NamedConstructor name value) = do
-  val <- render value
-  renderSumCondition name $ "|>" <+> requiredContents <+> val
-renderSum (RecordConstructor name value) = do
-  val <- render value
-  renderSumCondition name val
-renderSum (MultipleConstructors constrs) =
-  foldl1 (<$+$>) <$> mapM renderSum constrs
+renderField :: T.Text -> ElmValue -> RenderM Doc
+renderField field fieldVal = do
+  fieldModifier <- asks fieldLabelModifier
+
+  case fieldVal of
+    ElmRef ref -> pure $
+      "|> required" <+> dquotes (stext (fieldModifier field)) <+> "decode" <>
+        stext ref
+    ElmPrimitiveRef ref -> do
+      refDoc <- renderRef ref
+      pure $
+        "|> required" <+> dquotes (stext (fieldModifier field)) <+> refDoc
+    ElmEmpty -> error "ElmEmpty inside ElmField"
+    Values _ _ -> error "Values inside ElmField"
+    ElmField _ _ -> error "ElmField inside ElmField"
 
 -- | Render the decoding of a constructor's arguments. Note the constructor must
 -- be from a data type with multiple constructors and that it has multiple
@@ -98,8 +128,7 @@ renderConstructorArgs i (Values l r) = do
   pure (iR, rndrL <$$> rndrR)
 renderConstructorArgs i val = do
   rndrVal <- render val
-  let index = parens $ "index" <+> int i <+> rndrVal
-  pure (i, "|>" <+> requiredContents <+> index)
+  pure (i, "|> index" <+> int i <+> rndrVal)
 
 instance HasDecoder ElmValue where
   render (ElmRef name) = pure $ "decode" <> stext name
