@@ -12,6 +12,6 @@ encodeComment x =
         , ( "commentText", Json.Encode.string x.text )
         , ( "commentMainCategories", (Exts.Json.Encode.tuple2 Json.Encode.string Json.Encode.string) x.mainCategories )
         , ( "commentPublished", Json.Encode.bool x.published )
-        , ( "commentCreated", (Json.Encode.string << toString) x.created )
+        , ( "commentCreated", (Json.Encode.string << Date.Extra.toUtcIsoString) x.created )
         , ( "commentTags", (Exts.Json.Encode.dict Json.Encode.string Json.Encode.int) x.tags )
         ]
