@@ -93,6 +93,23 @@ JSON encoders and decoders match the default behavior of [Aeson][2].
 
 ## Change Log
 
+### V0.7.x
+
+A collation of various contributions on different forks. Ideally we can get this merged into krisajenkins/elm-export.
+
+* Elm Union types -> Haskell ADTs support
+* Unit and Wrapper types are now handled correctly
+* Various other fixes
+
+#### Opinionated additions
+
+These additions might not make the most sense as general defaults due to extra deps they pull in.
+
+See commit notes on each for more detail.
+
+* ISO8601 encoding for `Date` types via `Date.Extra` (85e017e674a4ea288fcf038aa3ba558698bcc9f4)
+* An `ElmType` instance for `Servant.Header` (4b68744a3af70f75ed7d5cb6782454d87cdcd3d3)
+
 ### V0.6.x
 Updated to Elm 0.18.
 
