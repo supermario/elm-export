@@ -111,7 +111,7 @@ instance HasDecoder ElmValue where
     dy <- render y
     return $ dx <$$> dy
   render (ElmField name value) = do
-    fieldModifier <- asks fieldLabelModifier
+    fieldModifier <- asks jsonKeyModifier
     dv <- render value
     return $ "|> required" <+> dquotes (stext (fieldModifier name)) <+> dv
   render ElmEmpty = pure (stext "")

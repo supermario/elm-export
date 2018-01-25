@@ -11,11 +11,12 @@ import Formatting hiding (text)
 import Text.PrettyPrint.Leijen.Text hiding ((<$>), (<>))
 
 data Options = Options
-  { fieldLabelModifier :: Text -> Text
+  { elmRecordFieldModifier :: Text -> Text
+  , jsonKeyModifier :: Text -> Text
   }
 
 defaultOptions :: Options
-defaultOptions = Options {fieldLabelModifier = id}
+defaultOptions = Options {elmRecordFieldModifier = id, jsonKeyModifier = id}
 
 cr :: Format r r
 cr = now "\n"
