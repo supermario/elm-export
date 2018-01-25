@@ -57,7 +57,7 @@ instance HasType ElmValue where
     dy <- render y
     return $ dx <+> dy
   render (ElmField name value) = do
-    fieldModifier <- asks fieldLabelModifier
+    fieldModifier <- asks elmRecordFieldModifier
     dv <- renderRecord value
     return $ stext (fieldModifier name) <+> ":" <+> dv
 

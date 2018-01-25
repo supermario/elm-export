@@ -8,10 +8,10 @@ import Json.Encode
 encodeComment : Comment -> Json.Encode.Value
 encodeComment x =
     Json.Encode.object
-        [ ( "commentPostId", Json.Encode.int x.postId )
-        , ( "commentText", Json.Encode.string x.text )
-        , ( "commentMainCategories", (Exts.Json.Encode.tuple2 Json.Encode.string Json.Encode.string) x.mainCategories )
-        , ( "commentPublished", Json.Encode.bool x.published )
-        , ( "commentCreated", (Json.Encode.string << Date.Extra.toUtcIsoString) x.created )
-        , ( "commentTags", (Exts.Json.Encode.dict Json.Encode.string Json.Encode.int) x.tags )
+        [ ( "jsonCommentPostId", Json.Encode.int x.elmCommentPostId )
+        , ( "jsonCommentText", Json.Encode.string x.elmCommentText )
+        , ( "jsonCommentMainCategories", (Exts.Json.Encode.tuple2 Json.Encode.string Json.Encode.string) x.elmCommentMainCategories )
+        , ( "jsonCommentPublished", Json.Encode.bool x.elmCommentPublished )
+        , ( "jsonCommentCreated", (Json.Encode.string << Date.Extra.toUtcIsoString) x.elmCommentCreated )
+        , ( "jsonCommentTags", (Exts.Json.Encode.dict Json.Encode.string Json.Encode.int) x.elmCommentTags )
         ]

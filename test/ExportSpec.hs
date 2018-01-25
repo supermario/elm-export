@@ -180,7 +180,7 @@ toElmTypeSpec =
            , ""
            , "%s"
            ])
-        (defaultOptions {fieldLabelModifier = withPrefix "post"})
+        (defaultOptions {elmRecordFieldModifier = withPrefix "post"})
         (Proxy :: Proxy Post)
         "test/PostTypeWithOptions.elm"
     it "toElmTypeSourceWithOptions Comment" $
@@ -194,7 +194,7 @@ toElmTypeSpec =
            , ""
            , "%s"
            ])
-        (defaultOptions {fieldLabelModifier = withPrefix "comment"})
+        (defaultOptions {elmRecordFieldModifier = withPrefix "comment"})
         (Proxy :: Proxy Comment)
         "test/CommentTypeWithOptions.elm"
     describe "Convert to Elm type references." $ do
@@ -268,7 +268,7 @@ toElmDecoderSpec =
            , ""
            , "%s"
            ])
-        (defaultOptions {fieldLabelModifier = withPrefix "post"})
+        (defaultOptions {jsonKeyModifier = withPrefix "post"})
         (Proxy :: Proxy Post)
         "test/PostDecoderWithOptions.elm"
     it "toElmDecoderSource Position" $
@@ -330,7 +330,7 @@ toElmDecoderSpec =
            , ""
            , "%s"
            ])
-        (defaultOptions {fieldLabelModifier = withPrefix "comment"})
+        (defaultOptions {jsonKeyModifier = withPrefix "comment"})
         (Proxy :: Proxy Comment)
         "test/CommentDecoderWithOptions.elm"
     it "toElmDecoderSource Useless" $
@@ -450,7 +450,7 @@ toElmEncoderSpec =
            , ""
            , "%s"
            ])
-        (defaultOptions {fieldLabelModifier = withPrefix "comment"})
+        (defaultOptions {jsonKeyModifier = withPrefix "jsonComment", elmRecordFieldModifier = withPrefix "elmComment"})
         (Proxy :: Proxy Comment)
         "test/CommentEncoderWithOptions.elm"
     it "toElmEncoderSourceWithOptions Post" $
@@ -465,7 +465,7 @@ toElmEncoderSpec =
            , ""
            , "%s"
            ])
-        (defaultOptions {fieldLabelModifier = withPrefix "post"})
+        (defaultOptions {jsonKeyModifier = withPrefix "jsonPost", elmRecordFieldModifier = withPrefix "elmPost"})
         (Proxy :: Proxy Post)
         "test/PostEncoderWithOptions.elm"
     it "toElmEncoderSource Position" $
